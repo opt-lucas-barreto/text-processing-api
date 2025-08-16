@@ -281,6 +281,7 @@ Uso: Reutiliza anagramas com mesma composição
 flowchart TD
     A[Entrada] --> B[Cache Direto]
     B --> C{Cache Hit?}
+    C -->|Sim| F[Recuperar Cache]
     C -->|Não| D[Cache Inteligente]
     D --> E{Composição existe?}
     E -->|Sim| F[Recuperar Cache]
