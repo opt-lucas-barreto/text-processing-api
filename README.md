@@ -278,16 +278,16 @@ Uso: Reutiliza anagramas com mesma composição
 ### **2. Exemplo de Funcionamento**
 
 ```mermaid
-graph TD
-    A[Entrada: "tets"] --> B[Verificar Cache Direto]
+flowchart TD
+    A[Entrada] --> B[Cache Direto]
     B --> C{Cache Hit?}
-    C -->|Não| D[Verificar Cache Inteligente]
-    D --> E{Composição "estt" existe?}
-    E -->|Sim| F[Recuperar do Cache]
-    E -->|Não| G[Gerar Novos Anagramas]
-    F --> H[Retornar com fromCache=true]
-    G --> I[Salvar em Ambos os Caches]
-    I --> J[Retornar com fromCache=false]
+    C -->|Não| D[Cache Inteligente]
+    D --> E{Composição existe?}
+    E -->|Sim| F[Recuperar Cache]
+    E -->|Não| G[Gerar Anagramas]
+    F --> H[Retornar Cache]
+    G --> I[Salvar Cache]
+    I --> J[Retornar Novo]
 ```
 
 ### **3. Benefícios do Cache Inteligente**
