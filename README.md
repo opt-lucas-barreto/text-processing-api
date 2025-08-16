@@ -627,70 +627,6 @@ public class SecurityConfig {
 }
 ```
 
-## 🎯 **Casos de Uso**
-
-### **1. Aplicações Web**
-- Jogos de palavras
-- Geradores de senhas
-- Ferramentas educacionais
-- Análise linguística
-
-### **2. Processamento em Lote**
-- Geração de dicionários
-- Análise de textos
-- Pesquisa de padrões
-- Otimização de algoritmos
-
-### **3. APIs de Terceiros**
-- Integração com sistemas existentes
-- Microserviços
-- APIs públicas
-- Serviços em nuvem
-
-### **4. Aplicações Empresariais**
-- Sistemas com controle de acesso
-- APIs internas seguras
-- Integração com SSO
-- Auditoria de uso
-
-## 🚨 **Limitações e Considerações**
-
-### **Limitações Técnicas**
-- **Complexidade**: O(n!) para n letras
-- **Memória**: Crescimento exponencial com tamanho da palavra
-- **Tempo**: Processamento pode ser lento para palavras grandes
-
-### **Considerações de Segurança**
-- **JWT Secret**: Deve ser alterado em produção
-- **Expiração**: Tokens expiram em 24 horas por padrão
-- **Roles**: Sistema simples de roles (USER/ADMIN)
-- **Banco**: H2 em memória (não persistente)
-
-### **Recomendações**
-- **Limite prático**: 8 letras para uso em produção
-- **Monitoramento**: Acompanhar uso de memória e CPU
-- **Cache**: Manter TTL adequado para seu caso de uso
-- **Validação**: Sempre validar entrada do usuário
-- **Segurança**: Alterar chave JWT e configurar HTTPS em produção
-
-## 🔮 **Funcionalidades Futuras**
-
-### **Planejadas**
-- [ ] **Cache Distribuído**: Redis Cluster para alta disponibilidade
-- [ ] **Compressão**: Compressão de dados no cache
-- [ ] **Métricas Avançadas**: Prometheus + Grafana
-- [ ] **Rate Limiting**: Proteção contra abuso
-- [ ] **WebSocket**: Notificações em tempo real
-- [ ] **Refresh Tokens**: Renovação automática de tokens
-- [ ] **OAuth2**: Integração com provedores externos
-
-### **Ideias**
-- [ ] **Machine Learning**: Sugestões de palavras similares
-- [ ] **API GraphQL**: Consultas flexíveis
-- [ ] **Cache Inteligente**: Previsão de uso baseada em padrões
-- [ ] **Multi-idioma**: Suporte a diferentes alfabetos
-- [ ] **Auditoria**: Logs detalhados de acesso e uso
-
 ## 📚 **Documentação Adicional**
 
 ### **Arquivos de Referência**
@@ -724,17 +660,7 @@ time curl -X POST "http://localhost:8080/api/anagrams/generate" \
   -d '{"letters": "hello"}'
 ```
 
-## 🤝 **Contribuição**
-
-### **Como Contribuir**
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Implemente e teste suas mudanças
-4. Execute todos os testes: `mvn test`
-5. Execute testes de integração: `.\test-api.ps1` ou `bash test-api.sh`
-6. Submeta um Pull Request
-
-### **Padrões de Código**
+### **🚀 Padrões de Código**
 - **Java**: Google Java Style Guide
 - **Documentação**: Javadoc para todas as classes públicas
 - **Testes**: Cobertura mínima de 90%
@@ -771,14 +697,5 @@ O projeto está completamente funcional e pronto para uso em produção, com tod
 - [x] Monitoramento e métricas
 - [x] Tratamento de erros e exceções
 
-### **🚀 Pronto para Produção**
-- Performance otimizada
-- Cache inteligente funcionando
-- **Segurança JWT implementada**
-- **Sistema de usuários configurado**
-- Testes automatizados passando
-- Documentação completa
-- Configuração robusta
-- Tratamento de falhas
 
 **A API está funcionando perfeitamente com segurança JWT e pronta para uso!** 🎯✨🔐
