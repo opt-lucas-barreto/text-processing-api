@@ -322,7 +322,7 @@ app.anagram.cache.enabled=true
 app.anagram.cache.ttl=3600  # 1 hora
 ```
 
-#### **Redis Embedded (Desenvolvimento/Testes)**
+#### **(Desenvolvimento/Testes)**
 ```properties
 # application-test.properties
 spring.main.allow-bean-definition-overriding=true
@@ -383,26 +383,6 @@ mvn test -Dtest=AnagramApiIntegrationTest#shouldGenerateAnagramsViaHttpAndSaveTo
 - ✅ **Performance**: Teste de cache (hello = 60 anagramas)
 - ✅ **Múltiplas Requisições**: Simulação de carga
 - ✅ **Entrada Moderada**: abcdef (720 anagramas)
-
-### **Scripts de Teste Automatizado (Legados)**
-
-#### **1. PowerShell (Windows)**
-```powershell
-# Suite completa de testes (com autenticação JWT)
-.\test-api.ps1
-
-# Debug específico do cache
-.\debug-cache.ps1
-```
-
-#### **2. Bash (Linux/Mac)**
-```bash
-# Suite completa de testes (com autenticação JWT)
-bash test-api.sh
-
-# Debug específico do cache
-bash debug-cache.sh
-```
 
 ### **Cobertura de Testes**
 
