@@ -79,7 +79,7 @@
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 		
-		<!-- Embedded Redis for development -->
+		<!-- Embedded Redis for development and testing -->
 		<dependency>
 			<groupId>it.ozimov</groupId>
 			<artifactId>embedded-redis</artifactId>
@@ -118,6 +118,25 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- Testcontainers for Redis real in tests (optional) -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.19.7</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.19.7</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
