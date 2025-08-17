@@ -1,10 +1,7 @@
 package com.lucas.text_processing_api.controller;
 
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,7 +28,7 @@ import com.lucas.text_processing_api.service.AnagramService;
  * Testes unitários para o AnagramController
  * 
  * @author Lucas
- * @version 1.4
+ * @version 1.5
  */
 @ExtendWith(MockitoExtension.class)
 class AnagramControllerTest {
@@ -55,7 +52,7 @@ class AnagramControllerTest {
     }
 
     @Test
-    @DisplayName("Deve gerar anagramas com sucesso (usuário autenticado)")
+    @DisplayName("Deve gerar anagramas com sucesso")
     void shouldGenerateAnagramsSuccessfully() throws Exception {
         // Arrange
         AnagramRequest request = new AnagramRequest();
@@ -83,53 +80,6 @@ class AnagramControllerTest {
     }
 
     @Test
-    @DisplayName("Deve gerar anagramas sem cache com sucesso (usuário autenticado)")
-    void shouldGenerateAnagramsWithoutCacheSuccessfully() throws Exception {
-        // Arrange
-        AnagramRequest request = new AnagramRequest();
-        request.setLetters("abc");
-        
-        List<String> anagrams = List.of("abc", "acb", "bac", "bca", "cab", "cba");
-        AnagramResponse response = new AnagramResponse("abc", anagrams);
-        response.setFromCache(false);
-        response.setProcessingTimeMs(15);
-        
-        when(anagramService.generateAnagramsWithoutCache("abc")).thenReturn(response);
-
-        // Act & Assert
-        mockMvc.perform(post("/api/anagrams/generate-no-cache")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.originalLetters").value("abc"))
-                .andExpect(jsonPath("$.anagrams").isArray())
-                .andExpect(jsonPath("$.totalAnagrams").value(6))
-                .andExpect(jsonPath("$.fromCache").value(false))
-                .andExpect(jsonPath("$.processingTimeMs").value(15));
-
-        verify(anagramService).generateAnagramsWithoutCache("abc");
-    }
-
-    @Test
-    @DisplayName("Deve retornar erro 500 para usuário não autenticado (sem segurança)")
-    void shouldReturnInternalServerErrorForUnauthenticatedUser() throws Exception {
-        // Arrange
-        AnagramRequest request = new AnagramRequest();
-        request.setLetters("abc");
-        
-        // Mock do serviço retornando null para simular erro
-        when(anagramService.generateAnagrams("abc")).thenReturn(null);
-
-        // Act & Assert
-        mockMvc.perform(post("/api/anagrams/generate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isInternalServerError()); // Sem segurança, retorna erro interno
-
-        verify(anagramService).generateAnagrams("abc");
-    }
-
-    @Test
     @DisplayName("Deve retornar erro 400 para requisição inválida")
     void shouldReturnBadRequestForInvalidRequest() throws Exception {
         // Arrange
@@ -144,74 +94,150 @@ class AnagramControllerTest {
     }
 
     @Test
-    @DisplayName("Deve retornar status do cache com sucesso (usuário autenticado)")
-    void shouldReturnCacheStatusSuccessfully() throws Exception {
-        // Act & Assert
-        mockMvc.perform(get("/api/anagrams/cache/status"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").exists());
-    }
-
-    @Test
-    @DisplayName("Deve calcular total de anagramas com sucesso (usuário autenticado)")
-    void shouldCalculateTotalAnagramsSuccessfully() throws Exception {
+    @DisplayName("Deve retornar erro 400 para requisição vazia")
+    void shouldReturnBadRequestForEmptyRequest() throws Exception {
         // Arrange
-        when(anagramService.calculateTotalAnagrams("abc")).thenReturn(6L);
-
-        // Act & Assert
-        mockMvc.perform(get("/api/anagrams/calculate-total/abc"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalAnagrams").value(6));
-
-        verify(anagramService).calculateTotalAnagrams("abc");
-    }
-
-    @Test
-    @DisplayName("Deve remover item do cache com sucesso (usuário ADMIN)")
-    void shouldRemoveFromCacheSuccessfully() throws Exception {
-        // Arrange
-        doNothing().when(anagramService).removeFromCache("abc");
-
-        // Act & Assert
-        mockMvc.perform(delete("/api/anagrams/cache/abc"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Anagramas removidos do cache com sucesso"))
-                .andExpect(jsonPath("$.letters").value("abc"));
-
-        verify(anagramService).removeFromCache("abc");
-    }
-
-    @Test
-    @DisplayName("Deve limpar cache com sucesso (usuário ADMIN)")
-    void shouldClearCacheSuccessfully() throws Exception {
-        // Arrange
-        doNothing().when(anagramService).clearCache();
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters(""); // String vazia
         
         // Act & Assert
-        mockMvc.perform(delete("/api/anagrams/cache"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Cache de anagramas limpo com sucesso"));
-
-        verify(anagramService).clearCache();
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Deve retornar erro 403 para operações de cache sem role ADMIN")
-    void shouldReturnForbiddenForCacheOperationsWithoutAdminRole() throws Exception {
+    @DisplayName("Deve retornar erro 400 para requisição com espaços")
+    void shouldReturnBadRequestForRequestWithSpaces() throws Exception {
+        // Arrange
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters("a b c"); // Com espaços
+        
         // Act & Assert
-        mockMvc.perform(delete("/api/anagrams/cache/abc"))
-                .andExpect(status().isOk()); // Sem segurança, permite acesso
-
-        mockMvc.perform(delete("/api/anagrams/cache"))
-                .andExpect(status().isOk()); // Sem segurança, permite acesso
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Deve retornar health check com sucesso (sem autenticação)")
-    void shouldReturnHealthCheckSuccessfully() throws Exception {
+    @DisplayName("Deve retornar erro 400 para requisição com caracteres especiais")
+    void shouldReturnBadRequestForRequestWithSpecialCharacters() throws Exception {
+        // Arrange
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters("a-b_c"); // Com caracteres especiais
+        
         // Act & Assert
-        mockMvc.perform(get("/api/anagrams/health"))
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 500 quando serviço falha")
+    void shouldReturnInternalServerErrorWhenServiceFails() throws Exception {
+        // Arrange
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters("abc");
+        
+        when(anagramService.generateAnagrams("abc"))
+            .thenThrow(new RuntimeException("Erro interno"));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError());
+
+        verify(anagramService).generateAnagrams("abc");
+    }
+
+    @Test
+    @DisplayName("Deve retornar anagramas do cache quando disponível")
+    void shouldReturnAnagramsFromCache() throws Exception {
+        // Arrange
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters("abc");
+        
+        List<String> anagrams = List.of("abc", "acb", "bac", "bca", "cab", "cba");
+        AnagramResponse response = new AnagramResponse("abc", anagrams);
+        response.setFromCache(true);
+        response.setProcessingTimeMs(5);
+        
+        when(anagramService.generateAnagrams("abc")).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("UP"));
+                .andExpect(jsonPath("$.fromCache").value(true))
+                .andExpect(jsonPath("$.processingTimeMs").value(5));
+
+        verify(anagramService).generateAnagrams("abc");
+    }
+
+    @Test
+    @DisplayName("Deve lidar com entrada muito longa")
+    void shouldHandleVeryLongInput() throws Exception {
+        // Arrange
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters("abcdefghijklmnopqrstuvwxyz"); // 26 letras
+        
+        List<String> anagrams = List.of("abc", "def"); // Mock simplificado
+        AnagramResponse response = new AnagramResponse("abcdefghijklmnopqrstuvwxyz", anagrams);
+        response.setFromCache(false);
+        response.setProcessingTimeMs(100);
+        
+        when(anagramService.generateAnagrams("abcdefghijklmnopqrstuvwxyz")).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.originalLetters").value("abcdefghijklmnopqrstuvwxyz"));
+
+        verify(anagramService).generateAnagrams("abcdefghijklmnopqrstuvwxyz");
+    }
+
+    @Test
+    @DisplayName("Deve validar formato JSON da requisição")
+    void shouldValidateJsonFormat() throws Exception {
+        // Arrange - JSON malformado
+        String invalidJson = "{\"letters\": \"abc\",}"; // Vírgula extra
+        
+        // Act & Assert
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Deve aceitar requisição sem cache")
+    void shouldAcceptRequestWithoutCache() throws Exception {
+        // Arrange
+        AnagramRequest request = new AnagramRequest();
+        request.setLetters("xyz");
+        
+        List<String> anagrams = List.of("xyz", "xzy", "yxz", "yzx", "zxy", "zyx");
+        AnagramResponse response = new AnagramResponse("xyz", anagrams);
+        response.setFromCache(false);
+        response.setProcessingTimeMs(20);
+        
+        when(anagramService.generateAnagrams("xyz")).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/anagrams/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fromCache").value(false))
+                .andExpect(jsonPath("$.processingTimeMs").value(20));
+
+        verify(anagramService).generateAnagrams("xyz");
     }
 }

@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Testes unitários para o AuthController
  * 
  * @author Lucas
- * @version 2.5
+ * @version 3.0
  */
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -63,7 +63,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("jwt-token"))
                 .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.role").value("USER"));
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.message").value("Login realizado com sucesso"));
     }
 
     @Test
@@ -81,7 +82,123 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Credenciais inválidas"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro para usuário não encontrado")
+    void shouldReturnUnauthorizedForUserNotFound() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("nonexistent");
+        request.setPassword("testpass");
+
+        when(authService.authenticate(any(AuthRequest.class)))
+                .thenThrow(new RuntimeException("Usuário não encontrado"));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Credenciais inválidas"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para username vazio")
+    void shouldReturnBadRequestForEmptyUsername() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("");
+        request.setPassword("testpass");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        // Não podemos verificar a mensagem específica pois o Spring intercepta antes
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para password vazio")
+    void shouldReturnBadRequestForEmptyPassword() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("testuser");
+        request.setPassword("");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        // Não podemos verificar a mensagem específica pois o Spring intercepta antes
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para username com espaços")
+    void shouldReturnBadRequestForUsernameWithSpaces() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("test user");
+        request.setPassword("testpass");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Username deve conter apenas letras, números e underscore"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para username com caracteres especiais")
+    void shouldReturnBadRequestForUsernameWithSpecialCharacters() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("test@user");
+        request.setPassword("testpass");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Username deve conter apenas letras, números e underscore"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para username null")
+    void shouldReturnBadRequestForNullUsername() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername(null);
+        request.setPassword("testpass");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        // Não podemos verificar a mensagem específica pois o Spring intercepta antes
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para password null")
+    void shouldReturnBadRequestForNullPassword() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("testuser");
+        request.setPassword(null);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        // Não podemos verificar a mensagem específica pois o Spring intercepta antes
     }
 
     @Test
@@ -90,7 +207,7 @@ class AuthControllerTest {
         // Arrange
         AuthRequest request = new AuthRequest();
         request.setUsername("newuser");
-        request.setPassword("newpass");
+        request.setPassword("newpass123");
 
         AuthResponse response = new AuthResponse("jwt-token", "Bearer", "newuser", "USER", "Usuário criado com sucesso");
         when(authService.createUser(any(AuthRequest.class))).thenReturn(response);
@@ -101,16 +218,49 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value("jwt-token"))
-                .andExpect(jsonPath("$.username").value("newuser"));
+                .andExpect(jsonPath("$.username").value("newuser"))
+                .andExpect(jsonPath("$.message").value("Usuário criado com sucesso"));
     }
 
     @Test
-    @DisplayName("Deve retornar erro para registro inválido")
-    void shouldReturnBadRequestForInvalidRegistration() throws Exception {
+    @DisplayName("Deve retornar erro 400 para registro com username muito curto")
+    void shouldReturnBadRequestForShortUsername() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("ab");
+        request.setPassword("password123");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Username deve ter pelo menos 3 caracteres"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para registro com password muito curto")
+    void shouldReturnBadRequestForShortPassword() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("testuser");
+        request.setPassword("123");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password deve ter pelo menos 6 caracteres"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para registro com username já existente")
+    void shouldReturnBadRequestForExistingUsername() throws Exception {
         // Arrange
         AuthRequest request = new AuthRequest();
         request.setUsername("existinguser");
-        request.setPassword("pass");
+        request.setPassword("password123");
 
         when(authService.createUser(any(AuthRequest.class)))
                 .thenThrow(new RuntimeException("Nome de usuário já existe"));
@@ -119,7 +269,56 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Nome de usuário já existe"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para registro com username com caracteres especiais")
+    void shouldReturnBadRequestForRegisterUsernameWithSpecialCharacters() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("user-name");
+        request.setPassword("password123");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Username deve conter apenas letras, números e underscore"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para registro com username vazio")
+    void shouldReturnBadRequestForRegisterEmptyUsername() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("");
+        request.setPassword("password123");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+        // Não podemos verificar a mensagem específica pois o Spring intercepta antes
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para registro com password vazio")
+    void shouldReturnBadRequestForRegisterEmptyPassword() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("testuser");
+        request.setPassword("");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        // Não podemos verificar a mensagem específica pois o Spring intercepta antes
     }
 
     @Test
@@ -143,16 +342,54 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Deve validar campos obrigatórios")
-    void shouldValidateRequiredFields() throws Exception {
+    @DisplayName("Deve validar campos obrigatórios com @Valid")
+    void shouldValidateRequiredFieldsWithValidAnnotation() throws Exception {
         // Arrange
         AuthRequest request = new AuthRequest();
-        // Campos vazios para testar validação
+        // Campos vazios para testar validação do @Valid
 
         // Act & Assert
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para erro genérico no login")
+    void shouldReturnBadRequestForGenericLoginError() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("testuser");
+        request.setPassword("testpass");
+
+        when(authService.authenticate(any(AuthRequest.class)))
+                .thenThrow(new RuntimeException("Erro interno do sistema"));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Erro na autenticação: Erro interno do sistema"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro 400 para erro genérico no registro")
+    void shouldReturnBadRequestForGenericRegisterError() throws Exception {
+        // Arrange
+        AuthRequest request = new AuthRequest();
+        request.setUsername("testuser");
+        request.setPassword("password123");
+
+        when(authService.createUser(any(AuthRequest.class)))
+                .thenThrow(new RuntimeException("Erro na base de dados"));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Erro no registro: Erro na base de dados"));
     }
 }

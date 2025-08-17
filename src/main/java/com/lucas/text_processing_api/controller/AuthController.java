@@ -91,6 +91,26 @@ public class AuthController {
         try {
             log.info("Tentativa de login para usuário: {}", request.getUsername());
             
+            // Validações adicionais
+            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+                log.warn("Tentativa de login com username vazio");
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Username não pode estar vazio"));
+            }
+            
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                log.warn("Tentativa de login com password vazio");
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Password não pode estar vazio"));
+            }
+            
+            // Verificar caracteres especiais no username
+            if (!request.getUsername().matches("^[a-zA-Z0-9_]+$")) {
+                log.warn("Tentativa de login com username contendo caracteres especiais: {}", request.getUsername());
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Username deve conter apenas letras, números e underscore"));
+            }
+            
             AuthResponse response = authService.authenticate(request);
             
             log.info("Login realizado com sucesso para usuário: {}", request.getUsername());
@@ -98,7 +118,16 @@ public class AuthController {
             
         } catch (Exception e) {
             log.warn("Falha no login para usuário {}: {}", request.getUsername(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            
+            // Retornar mensagem específica para credenciais inválidas
+            if (e.getMessage().contains("Credenciais inválidas") || e.getMessage().contains("Usuário não encontrado")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new AuthResponse(null, null, null, null, "Credenciais inválidas"));
+            }
+            
+            // Para outros erros, retornar 400
+            return ResponseEntity.badRequest()
+                .body(new AuthResponse(null, null, null, null, "Erro na autenticação: " + e.getMessage()));
         }
     }
     
@@ -135,6 +164,40 @@ public class AuthController {
         try {
             log.info("Tentativa de registro para usuário: {}", request.getUsername());
             
+            // Validações adicionais
+            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+                log.warn("Tentativa de registro com username vazio");
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Username não pode estar vazio"));
+            }
+            
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                log.warn("Tentativa de registro com password vazio");
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Password não pode estar vazio"));
+            }
+            
+            // Verificar caracteres especiais no username
+            if (!request.getUsername().matches("^[a-zA-Z0-9_]+$")) {
+                log.warn("Tentativa de registro com username contendo caracteres especiais: {}", request.getUsername());
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Username deve conter apenas letras, números e underscore"));
+            }
+            
+            // Verificar tamanho mínimo do username
+            if (request.getUsername().trim().length() < 3) {
+                log.warn("Tentativa de registro com username muito curto: {}", request.getUsername());
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Username deve ter pelo menos 3 caracteres"));
+            }
+            
+            // Verificar tamanho mínimo da senha
+            if (request.getPassword().trim().length() < 6) {
+                log.warn("Tentativa de registro com password muito curto");
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Password deve ter pelo menos 6 caracteres"));
+            }
+            
             AuthResponse response = authService.createUser(request);
             
             log.info("Usuário registrado com sucesso: {}", request.getUsername());
@@ -142,7 +205,16 @@ public class AuthController {
             
         } catch (Exception e) {
             log.error("Erro no registro para usuário {}: {}", request.getUsername(), e.getMessage());
-            return ResponseEntity.badRequest().build();
+            
+            // Retornar mensagem específica para usuário já existente
+            if (e.getMessage().contains("Nome de usuário já existe")) {
+                return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, null, "Nome de usuário já existe"));
+            }
+            
+            // Para outros erros, retornar 400
+            return ResponseEntity.badRequest()
+                .body(new AuthResponse(null, null, null, null, "Erro no registro: " + e.getMessage()));
         }
     }
     
