@@ -59,6 +59,14 @@ text-processing-api/
 │   │       └── AnagramGenerator.java             # Algoritmo de geração
 │   └── resources/
 │       └── application.properties                # Configurações
+├── src/test/java/                                # Testes Java
+│   └── com/lucas/text_processing_api/
+│       ├── controller/
+│       │   └── AnagramApiIntegrationTest.java   # Testes de integração HTTP
+│       └── service/
+│           └── RedisIntegrationTest.java         # Testes de integração Redis
+├── src/test/resources/
+│   └── application-test.properties              # Configurações de teste
 ├── test-api.ps1                                  # Script PowerShell (Windows)
 ├── debug-cache.ps1                               # Debug cache PowerShell
 ├── test-api.sh                                   # Script Bash (Linux/Mac)
@@ -314,6 +322,14 @@ app.anagram.cache.enabled=true
 app.anagram.cache.ttl=3600  # 1 hora
 ```
 
+#### **Redis Embedded (Desenvolvimento/Testes)**
+```properties
+# application-test.properties
+spring.main.allow-bean-definition-overriding=true
+# Redis Embedded é configurado automaticamente via RedisConfig
+# Porta dinâmica para evitar conflitos
+```
+
 #### **Cache em Memória (Fallback)**
 ```java
 // Configuração automática
@@ -337,7 +353,38 @@ Palavra    | Sem Cache | Com Cache | Melhoria
 
 ## 🧪 **Sistema de Testes**
 
-### **Scripts de Teste Automatizado**
+### **Testes de Integração com Redis Embedded**
+
+#### **1. Testes Java com JUnit 5**
+```bash
+# Executar todos os testes
+mvn test
+
+# Executar apenas testes de integração
+mvn test -Dtest=AnagramApiIntegrationTest
+
+# Executar teste específico
+mvn test -Dtest=AnagramApiIntegrationTest#shouldGenerateAnagramsViaHttpAndSaveToRedisCache
+```
+
+#### **2. Características dos Testes**
+- **Redis Embedded**: Funciona sem instalação externa
+- **Autenticação Real**: Login JWT real em cada teste
+- **HTTP Real**: TestRestTemplate para requisições HTTP completas
+- **Cache Funcional**: Testa Redis Embedded real
+- **Spring Security**: Segurança ativa durante testes
+- **Perfil de Teste**: Configuração específica para testes
+
+#### **3. Cobertura de Testes de Integração**
+- ✅ **Geração de Anagramas**: Via HTTP com cache Redis
+- ✅ **Diferentes Tamanhos**: 1, 2, 3, 6 letras
+- ✅ **Normalização**: Conversão para minúsculas
+- ✅ **Validação**: Entrada vazia e nula
+- ✅ **Performance**: Teste de cache (hello = 60 anagramas)
+- ✅ **Múltiplas Requisições**: Simulação de carga
+- ✅ **Entrada Moderada**: abcdef (720 anagramas)
+
+### **Scripts de Teste Automatizado (Legados)**
 
 #### **1. PowerShell (Windows)**
 ```powershell
@@ -377,6 +424,9 @@ bash debug-cache.sh
 - ✅ **Validação de Entrada**: Tratamento de erros
 - ✅ **Performance**: Tempos de resposta
 - ✅ **Gerenciamento**: Limpeza e status do cache
+- ✅ **Redis Embedded**: Funcionamento sem dependências externas
+- ✅ **HTTP Real**: TestRestTemplate com Spring Security ativo
+- ✅ **Cenários de Carga**: Múltiplas requisições simultâneas
 
 ### **Casos de Teste Cobertos**
 
@@ -631,12 +681,8 @@ public class SecurityConfig {
 ## 📚 **Documentação Adicional**
 
 ### **Arquivos de Referência**
-- `curl-examples.md`: Exemplos cURL para Linux/Mac
-- `curl-examples-windows.md`: Exemplos para Windows
-- `test-api.sh`: Script de teste Bash
-- `test-api.ps1`: Script de teste PowerShell
-- `debug-cache.sh`: Debug de cache Bash
-- `debug-cache.ps1`: Debug de cache PowerShell
+- `ARCHITECTURE.md`: Documentação detalhada da arquitetura do sistema
+- `UML_DIAGRAMS.md`: Diagramas UML e de fluxo da aplicação
 
 ### **Comandos Úteis**
 ```bash
@@ -691,12 +737,16 @@ O projeto está completamente funcional e pronto para uso em produção, com tod
 - [x] **Sistema de usuários com banco H2**
 - [x] **Controle de acesso por roles (USER/ADMIN)**
 - [x] **Autenticação e autorização**
+- [x] **Testes de integração com Redis Embedded**
+- [x] **Testes HTTP reais com TestRestTemplate**
+- [x] **Autenticação real em testes de integração**
 - [x] Testes unitários e de integração
 - [x] Scripts de teste para Windows e Linux/Mac
 - [x] Documentação completa com exemplos
-- [x] Redis embutido configurado
+- [x] Redis Embedded para desenvolvimento/testes
+- [x] Redis externo para produção
 - [x] Monitoramento e métricas
 - [x] Tratamento de erros e exceções
 
 
-**A API está funcionando perfeitamente com segurança JWT e pronta para uso!** 🎯✨🔐
+**A API está funcionando perfeitamente com segurança JWT, Redis Embedded para testes, e pronta para uso!** 🎯✨🔐🧪
