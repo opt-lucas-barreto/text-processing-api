@@ -1069,19 +1069,5 @@ Os diagramas UML em formato textual fornecem uma visão completa e acessível da
 - **Portabilidade**: Funciona em qualquer ambiente
 - **Completude**: Cobre todas as camadas da aplicação
 
-### **🆕 Novos Recursos Documentados:**
-- **Segurança JWT**: Filtros, configuração e fluxo de autenticação
-- **Testes de Integração**: Redis Embedded e TestRestTemplate
-- **Arquitetura Completa**: Todas as camadas e dependências
-- **Fluxos de Teste**: Sequências detalhadas de execução
-
-### **🚀 Próximos Passos:**
-- Atualizar diagramas conforme a aplicação evolui
-- Manter sincronizados com o código
-- Usar para validação de arquitetura
-- Compartilhar com a equipe de desenvolvimento
-- Expandir para novos componentes futuros
 
 ---
-
-**💡 Dica**: Mantenha os diagramas sincronizados com o código para garantir que a documentação sempre reflita a implementação atual, incluindo novas funcionalidades como segurança JWT e testes de integração.
